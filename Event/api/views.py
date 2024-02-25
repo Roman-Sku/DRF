@@ -32,7 +32,7 @@ class SignupEventView(ListCreateAPIView):
         return Response({"message": "Successfully subscribed to the event"})
 
 
-class UserListView(ListAPIView):
+class UserListView(ListCreateAPIView):
     serializer_class = UserSerializer
 
     def get_permissions(self):
@@ -40,18 +40,6 @@ class UserListView(ListAPIView):
             return [AllowAny()]
         else:
             return [IsAdminUser()]
-
-    def get(self, request, *args, **kwargs):
-        queryset = User.objects.all()
-        serializer = UserSerializer(queryset, many=True)
-        return Response({'serializer': serializer.data})
-
-    def post(self, request, *args, **kwargs):
-        serializer = UserSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors)
 
 
 class EventViewSet(ListAPIView):
