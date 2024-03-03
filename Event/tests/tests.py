@@ -64,14 +64,14 @@ class UsersTests(TestCase):
     def test_incorrect_register_user(self):
         data = {"username": 'r', 'email': 'roman.com', 'password': 'ps'}
         response = self.client.post('/api/users/', data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue("refresh" in response.data)
         self.assertTrue("access" in response.data)
 
     def test_empty_register_user(self):
         data = {"username": '', 'email': '', 'password': ''}
         response = self.client.post('/api/users/', data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue("refresh" in response.data)
         self.assertTrue("access" in response.data)
 
