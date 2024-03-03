@@ -57,9 +57,8 @@ class UserListView(ListAPIView):
         serializer = UserSerializer(data=request.data)
 
         if serializer.is_valid():
-            user = serializer.save()
-            token = get_token(user)
-            return Response({**serializer.data, **token}, status=201)
+            serializer.save()
+            return Response({**serializer.data}, status=201)
         return Response(serializer.errors)
 
 
