@@ -5,6 +5,7 @@ from django.utils import timezone
 from .models import Event
 from django.conf import settings
 
+
 @shared_task(ignore_result=True, routing_key='email.send')
 def send_email_task(subject, message, from_email, recipient_list):
     return send_mail(subject, message, from_email, recipient_list)
@@ -16,8 +17,8 @@ def send_event_reminders():
     one_day = current_time + timedelta(days=1)
     six_hours = current_time + timedelta(hours=6)
 
-    events_one_day = Event.objects.filter(meeting_time__range=(current_time, one_day))
-    events_six_hours = Event.objects.filter(meeting_time__range=(current_time, six_hours))
+    events_one_day = Event.objects.filter(meeting_time=one_day)
+    events_six_hours = Event.objects.filter(meeting_time=six_hours)
 
     for event in events_one_day:
         for user in event.users.all():

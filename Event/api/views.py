@@ -7,6 +7,7 @@ from Event.cache import get_cached
 from Event.models import Event, User
 from . import permissions
 from .serializers import EventSerializer, UserSerializer
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 
 
 class EventsMyViewSet(ListAPIView):
@@ -32,7 +33,13 @@ class SignupEventView(ListCreateAPIView):
         return Response({"message": "Successfully subscribed to the event"})
 
 
-class UserListView(ListCreateAPIView):
+def get_token(user):
+    refresh = RefreshToken.for_user(user)
+    access = AccessToken.for_user(user)
+    return {"refresh": str(refresh), "access": str(access)}
+
+
+class UserListView(ListAPIView):
     serializer_class = UserSerializer
 
     def get_permissions(self):
@@ -40,6 +47,20 @@ class UserListView(ListCreateAPIView):
             return [AllowAny()]
         else:
             return [IsAdminUser()]
+
+    def get(self, request, *args, **kwargs):
+        queryset = User.objects.all()
+        serializer = UserSerializer(queryset, many=True)
+        return Response({'serializer': serializer.data})
+
+    def post(self, request, *args, **kwargs):
+        serializer = UserSerializer(data=request.data)
+
+        if serializer.is_valid():
+            user = serializer.save()
+            token = get_token(user)
+            return Response({**serializer.data, **token}, status=201)
+        return Response(serializer.errors)
 
 
 class EventViewSet(ListAPIView):

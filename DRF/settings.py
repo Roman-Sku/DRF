@@ -13,9 +13,12 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 from celery.schedules import crontab
 import os
+import sys
 from datetime import timedelta
 from dotenv import load_dotenv
 load_dotenv()
+
+TESTING = 'test' in sys.argv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -129,19 +132,36 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-REST_FRAMEWORK = {
+if TESTING:
 
-    'DEFAULT_RENDERER_CLASSES': (
-        'rest_framework.renderers.BrowsableAPIRenderer',
-        'rest_framework.renderers.JSONRenderer',
+    REST_FRAMEWORK = {
 
-    ),
+        'DEFAULT_RENDERER_CLASSES': (
 
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
+            'rest_framework.renderers.JSONRenderer',
 
-}
+
+        ),
+
+        'DEFAULT_AUTHENTICATION_CLASSES': (
+            'rest_framework_simplejwt.authentication.JWTAuthentication',
+        ),
+
+    }
+else:
+    REST_FRAMEWORK = {
+
+        'DEFAULT_RENDERER_CLASSES': (
+            'rest_framework.renderers.BrowsableAPIRenderer',
+            'rest_framework.renderers.JSONRenderer',
+
+        ),
+
+        'DEFAULT_AUTHENTICATION_CLASSES': (
+            'rest_framework_simplejwt.authentication.JWTAuthentication',
+        ),
+
+    }
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
@@ -159,13 +179,20 @@ EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
 
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
-CELERY_TIMEZONE = TIME_ZONE
+if TESTING:
+    CELERY_BROKER_URL = 'memory://'
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = True
 
-CELERY_BEAT_SCHEDULE = {
-    'send-reminders-every-hour': {
-        'task': 'Event.tasks.send_email_reminders',
-        'schedule': crontab(minute="0"),  # запускать каждый час в начале часа
-    },
-}
+else:
+    CELERY_BROKER_URL = 'redis://localhost:6379/0'
+    CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+    CELERY_TIMEZONE = TIME_ZONE
+
+    CELERY_BEAT_SCHEDULE = {
+
+        'send-reminders-every-hour': {
+            'task': 'Event.tasks.send_email_reminders',
+            'schedule': crontab(minute="0"),  # запускать каждый час в начале часа
+        },
+    }

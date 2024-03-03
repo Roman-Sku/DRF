@@ -9,14 +9,14 @@ from .tasks import send_email_task
 
 @receiver(post_save, sender=Event)
 def create_event(sender, created, instance: Event, **kwargs):
-    if created:
-        users_notification = User.objects.filter(notify=True)
-        for user in users_notification:
-            send_email_task.delay("Уведомление",
-                                  f"Уведомляем вас, что появилось новое событие  {instance.name} \n, "
-                                  f"{instance.description} \n,"
-                                  f"Мероприятие  проходит в {instance.meeting_time}",
-                                  settings.EMAIL_HOST_USER,
-                                  [user.email],
-                                  fail_silently=False)
-
+    if not settings.TESTING:
+        if created:
+            users_notification = User.objects.filter(notify=True)
+            for user in users_notification:
+                send_email_task.delay("Уведомление",
+                                      f"Уведомляем вас, что появилось новое событие  {instance.name} \n, "
+                                      f"{instance.description} \n,"
+                                      f"Мероприятие  проходит в {instance.meeting_time}",
+                                      settings.EMAIL_HOST_USER,
+                                      [user.email],
+                                      fail_silently=False)
