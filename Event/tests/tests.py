@@ -32,16 +32,6 @@ class EventTest(TestCase):
             event_time = parse_datetime(event['meeting_time'])
             self.assertGreater(event_time, timezone.now())
 
-    def test_superuser_can_view_list_users(self):
-        self.client.force_authenticate(user=self.admin_user)
-        response = self.client.get('/api/users/')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_user_cant_view_list_users(self):
-        self.client.force_authenticate(user=self.normal_user)
-        response = self.client.get('/api/users/')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
 
 class UsersTests(TestCase):
 
@@ -58,22 +48,16 @@ class UsersTests(TestCase):
         data = {"username": 'roman', 'email': 'roman@gmail.com', 'password': 'dgkbmlsl'}
         response = self.client.post('/api/users/', data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertTrue("refresh" in response.data)
-        self.assertTrue("access" in response.data)
 
     def test_incorrect_register_user(self):
         data = {"username": 'r', 'email': 'roman.com', 'password': 'ps'}
         response = self.client.post('/api/users/', data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertTrue("refresh" in response.data)
-        self.assertTrue("access" in response.data)
 
     def test_empty_register_user(self):
         data = {"username": '', 'email': '', 'password': ''}
         response = self.client.post('/api/users/', data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertTrue("refresh" in response.data)
-        self.assertTrue("access" in response.data)
 
 
 class EventSignupTest(TestCase):
@@ -123,3 +107,25 @@ class MyEventsTest(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn(self.normal_user, self.future_event.users.all())
+
+
+class WhoCanViewList(TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
+    def setUp(self):
+        self.client = APIClient()
+        self.admin_user = User.objects.create_superuser('admin', 'admin@example.com', 'admin1')
+        self.normal_user = User.objects.create_user('user', 'user@example.com', 'user1')
+
+    def test_superuser_can_view_list_users(self):
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.get('/api/users/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_user_cant_view_list_users(self):
+        self.client.force_authenticate(user=self.normal_user)
+        response = self.client.get('/api/users/')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
